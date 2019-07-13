@@ -2,9 +2,11 @@ import React from 'react';
 import { ListViewRow, Checkbox } from 'react-desktop/macOs';
 import styled from 'styled-components';
 import { FaTrashAlt } from 'react-icons/fa';
+import { SetTodo, DeleteTodo } from './types';
 
 interface OwnProps {
-  setTodo: (todo: ToDoType) => void;
+  setTodo: SetTodo;
+  deleteTodo: DeleteTodo;
 }
 
 export interface ToDoType {
@@ -43,7 +45,7 @@ const StyledText = styled.div`
 type P = OwnProps & ToDoType;
 
 const Task: React.FC<P> = props => {
-  const { title, id, checked, setTodo } = props;
+  const { title, id, checked, setTodo, deleteTodo } = props;
   const [edit, setEdit] = React.useState(false);
   const [editedTitle, setEditedTitle] = React.useState(title);
 
@@ -68,7 +70,9 @@ const Task: React.FC<P> = props => {
         }}
         defaultChecked={checked}
       />
-      <StyledText onClick={(e: React.MouseEvent) => setEdit(!edit ? true : true)}>
+      <StyledText
+        onClick={(e: React.MouseEvent) => setEdit(!edit ? true : true)}
+      >
         {edit ? (
           <form onSubmit={saveTitle}>
             <input
@@ -82,9 +86,15 @@ const Task: React.FC<P> = props => {
         ) : (
           title
         )}
-
-        <a><FaTrashAlt/></a>
       </StyledText>
+      <a
+        onClick={(e: React.MouseEvent) => {
+          e.preventDefault();
+          deleteTodo(id);
+        }}
+      >
+        <FaTrashAlt />
+      </a>
     </ListViewRow>
   );
 };
