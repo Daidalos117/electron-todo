@@ -8,7 +8,8 @@ import {
   ListViewFooter,
   ListViewSection,
   Dialog,
-  Button
+  Button,
+  SearchField
 } from 'react-desktop/macOs';
 import styled from 'styled-components';
 import constants from './constants';
@@ -51,17 +52,27 @@ const StyledDialog = styled.div`
   }
 `;
 
+const StyledSearch = styled.div`
+  max-width: 15rem;
+  margin-left: auto;
+  margin-top: 7rem;
+`;
+
 const App: React.FC = () => {
   const [toDos, setTodos] = useState<ToDoType[]>([]);
   const [newTask, setNewTask] = useState('');
   const [delDialog, setDelDialog] = useState<false | string>(false);
 
   useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = () => {
     ipcRenderer.send(constants.TASKS_LOAD);
     ipcRenderer.on(constants.TASKS_LOAD, (event: any, data: any) => {
       setTodos(data);
     });
-  }, []);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +104,20 @@ const App: React.FC = () => {
     ipcRenderer.send(constants.TASKS_SAVE, todos);
   };
 
+  const filterTodos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    if(value === '') {
+      fetchTasks();
+      return;
+    }
+    const newTodos = toDos.filter((todo: ToDoType) => {
+      //g - global, i - insesitive, neresi velikosti
+      const regex = new RegExp(value, 'gi');
+      return todo.title.match(regex);
+    });
+    setTodos(newTodos);
+  };
+
   return (
     <div className="App">
       {delDialog && (
@@ -119,6 +144,16 @@ const App: React.FC = () => {
       <Text padding="0 100px" textAlign="center" size="32" marginBottom={20}>
         Todo app
       </Text>
+
+      <StyledSearch>
+        <SearchField
+          placeholder="Search"
+          defaultValue=""
+          onChange={filterTodos}
+          onCancel={() => fetchTasks()}
+
+        />
+      </StyledSearch>
       <ListView background="#f1f2f4" width="100%">
         <ListViewHeader>
           <Text size="11" color="#696969">
