@@ -5,7 +5,10 @@
   "description": "Some electron app",
   "author": "Roman Rajchert",
   "build": {
-    "appId": "some"
+    "appId": "com.roman.todo",
+    "win": {
+      "target": "nsis"
+    }
   },
   "main": "public/electron.js",
   "homepage": "./",
@@ -18,8 +21,6 @@
     "@types/uuid": "^3.4.5",
     "concurrently": "^4.1.1",
     "cross-env": "^5.2.0",
-    "electron": "^5.0.6",
-    "electron-builder": "^21.0.15",
     "electron-is-dev": "^1.1.0",
     "electron-store": "^4.0.0",
     "react": "^16.8.6",
@@ -33,14 +34,18 @@
     "uuid": "^3.3.2",
     "wait-on": "^3.3.0"
   },
+  "devDependencies" : {
+    "electron-builder": "^21.0.15",
+    "electron": "^5.0.6"
+  },
   "scripts": {
     "react-start": "react-scripts start",
     "react-build": "react-scripts build",
     "react-test": "react-scripts test --env=jsdom",
     "react-eject": "react-scripts eject",
     "electron-build": "electron-builder",
-    "release": "yarn react-build && electron-builder --publish=always",
-    "build": "yarn react-build && yarn electron-build",
+    "release": "npm run react-build && electron-builder -mwl --publish=never ",
+    "build": "npm run react-build && npm run electron-build",
     "start": "concurrently \"cross-env BROWSER=none npm run react-start\" \"wait-on http://localhost:3000 && electron .\""
   },
   "eslintConfig": {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ListViewRow, Checkbox } from 'react-desktop/macOs';
+import { Checkbox } from 'react-desktop/macOs';
 import styled from 'styled-components';
 import { FaTrashAlt } from 'react-icons/fa';
 import { IconContext } from 'react-icons';
@@ -17,21 +17,6 @@ export interface ToDoType {
   index: number;
 }
 
-const CheckBox = styled.input.attrs({ type: 'checkbox' })`
-  borderwidth: 1px;
-  borderstyle: solid;
-  bordercolor: #b8b8b8;
-  borderradius: 3px;
-  backgroundcolor: #ffffff;
-  padding: 6px;
-  margin: 0 1px;
-  boxshadow: inset 0 1px 0 0 rgba(224, 224, 224, 0.4);
-  transition: all 0.4s;
-
-  :focus {
-    outline: none;
-  }
-`;
 
 const StyledText = styled.div`
   font-size: 1rem;
@@ -77,7 +62,7 @@ const Task: React.FC<P> = props => {
         defaultChecked={checked}
       />
       <StyledText
-        onClick={(e: React.MouseEvent) => setEdit(!edit ? true : true)}
+        onClick={() => setEdit(!edit ? true : true)}
       >
         {edit ? (
           <form onSubmit={saveTitle}>

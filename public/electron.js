@@ -3,7 +3,7 @@ const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 const path = require('path');
 const isDev = require('electron-is-dev');
-const { TASKS_SAVE, TASKS_LOAD, TASKS } = require('../src/constants');
+const { TASKS_SAVE, TASKS_LOAD, TASKS } = require('./constants');
 const Store = require('electron-store');
 const store = new Store();
 const { ipcMain } = electron;
@@ -11,8 +11,8 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 680,
+    width: 300,
+    height: 500,
     webPreferences: {
       nodeIntegration: true
     }

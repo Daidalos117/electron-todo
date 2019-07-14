@@ -15,9 +15,13 @@ import {
 import styled from 'styled-components';
 import constants from './constants';
 import { v4 } from 'uuid';
-import { SetTodo, DeleteTodo } from 'components/types';
-import { FaPlus, FaGripVertical, FaGripLinesVertical } from 'react-icons/fa';
-import { SortableContainer, SortableElement, SortEnd } from 'react-sortable-hoc';
+import { DeleteTodo } from 'components/types';
+import { FaGripVertical } from 'react-icons/fa';
+import {
+  SortableContainer,
+  SortableElement,
+  SortEnd
+} from 'react-sortable-hoc';
 
 /**
  * Electron stuff
@@ -67,7 +71,7 @@ const StyledDialog = styled.div`
 const StyledSearch = styled.div`
   max-width: 15rem;
   margin-left: auto;
-  margin-top: 7rem;
+  margin-top: 2rem;
 `;
 
 const StyledGripIcon = styled.div`
@@ -84,13 +88,6 @@ const App: React.FC = () => {
   const [delDialog, setDelDialog] = useState<false | string>(false);
   window.delDialog = delDialog;
 
-  const bodyListener = (e: any) => {
-    const code = e.key;
-    if (window.delDialog && code === 'Enter') {
-      realDelete();
-    }
-  };
-
   useEffect(() => {
     fetchTasks();
   }, []);
@@ -99,14 +96,21 @@ const App: React.FC = () => {
     const body = document.querySelector('body');
 
     if (body) {
-      body.addEventListener('keypress', bodyListener);
+      body.addEventListener('keypress', (e: any) => {
+        const code = e.key;
+        if (window.delDialog && code === 'Enter') {
+          realDelete();
+        }
+      });
     }
   }, []);
 
   const fetchTasks = () => {
     ipcRenderer.send(constants.TASKS_LOAD);
     ipcRenderer.on(constants.TASKS_LOAD, (event: any, data: any) => {
-      setTodos(data);
+      if (Array.isArray(data)) {
+        setTodos(data);
+      }
     });
   };
 
@@ -208,11 +212,9 @@ const App: React.FC = () => {
   };
 
   const realDelete = () => {
-    saveSetTodos(toDos.filter(todo => todo.id != delDialog));
+    saveSetTodos(toDos.filter(todo => todo.id !== delDialog));
     setDelDialog(false);
   };
-
-
 
   return (
     <StyledApp className="App">
@@ -231,8 +233,8 @@ const App: React.FC = () => {
         </StyledDialog>
       )}
 
-      <Text textAlign="center" size="32" marginBottom={20} padding={0}>
-        Todo app
+      <Text textAlign="center" size="32" marginBottom={10} padding={0}>
+        Todo app ♥
       </Text>
 
       <StyledSearch>
