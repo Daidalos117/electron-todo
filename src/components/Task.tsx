@@ -2,6 +2,7 @@ import React from 'react';
 import { ListViewRow, Checkbox } from 'react-desktop/macOs';
 import styled from 'styled-components';
 import { FaTrashAlt } from 'react-icons/fa';
+import { IconContext } from 'react-icons';
 import { SetTodo, DeleteTodo } from './types';
 
 interface OwnProps {
@@ -13,6 +14,7 @@ export interface ToDoType {
   id: string;
   title: string;
   checked?: boolean;
+  index: number;
 }
 
 const CheckBox = styled.input.attrs({ type: 'checkbox' })`
@@ -42,6 +44,10 @@ const StyledText = styled.div`
   }
 `;
 
+const StyledDelete = styled.a`
+  position: relative;
+`;
+
 type P = OwnProps & ToDoType;
 
 const Task: React.FC<P> = props => {
@@ -62,7 +68,7 @@ const Task: React.FC<P> = props => {
   };
 
   return (
-    <ListViewRow>
+    <>
       <Checkbox
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           const { checked } = e.target;
@@ -81,21 +87,30 @@ const Task: React.FC<P> = props => {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setEditedTitle(e.target.value)
               }
+              onBlur={saveTitle}
             />
           </form>
         ) : (
           title
         )}
       </StyledText>
-      <a
+      <StyledDelete
         onClick={(e: React.MouseEvent) => {
           e.preventDefault();
+          e.stopPropagation();
+          console.log('delete');
           deleteTodo(id);
         }}
+        onMouseDown={(e: React.MouseEvent) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
       >
-        <FaTrashAlt />
-      </a>
-    </ListViewRow>
+        <IconContext.Provider value={{ color: '#f44336' }}>
+          <FaTrashAlt />
+        </IconContext.Provider>
+      </StyledDelete>
+    </>
   );
 };
 

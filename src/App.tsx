@@ -9,12 +9,15 @@ import {
   ListViewSection,
   Dialog,
   Button,
-  SearchField
+  SearchField,
+  ListViewRow
 } from 'react-desktop/macOs';
 import styled from 'styled-components';
 import constants from './constants';
 import { v4 } from 'uuid';
 import { SetTodo, DeleteTodo } from 'components/types';
+import { FaPlus, FaGripVertical, FaGripLinesVertical } from 'react-icons/fa';
+import { SortableContainer, SortableElement, SortEnd } from 'react-sortable-hoc';
 
 /**
  * Electron stuff
@@ -22,10 +25,19 @@ import { SetTodo, DeleteTodo } from 'components/types';
 declare global {
   interface Window {
     require: any;
+    delDialog: any;
   }
 }
 const electron = window.require('electron');
 const ipcRenderer = electron.ipcRenderer;
+
+const StyledApp = styled.div`
+  background-color: rgba(255, 255, 255, 0.4);
+  height: calc(100% - 4rem);
+  padding: 2rem 0;
+  margin: 2rem;
+  box-sizing: border-box;
+`;
 
 const StyledDialog = styled.div`
   position: absolute;
@@ -39,7 +51,7 @@ const StyledDialog = styled.div`
   justify-content: center;
   display: flex;
   animation-name: zoomIn;
-  animation-duration: 0.5s;
+  animation-duration: 0.3s;
   @keyframes zoomIn {
     from {
       opacity: 0;
@@ -58,13 +70,37 @@ const StyledSearch = styled.div`
   margin-top: 7rem;
 `;
 
+const StyledGripIcon = styled.div`
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.4;
+`;
+
 const App: React.FC = () => {
   const [toDos, setTodos] = useState<ToDoType[]>([]);
   const [newTask, setNewTask] = useState('');
   const [delDialog, setDelDialog] = useState<false | string>(false);
+  window.delDialog = delDialog;
+
+  const bodyListener = (e: any) => {
+    const code = e.key;
+    if (window.delDialog && code === 'Enter') {
+      realDelete();
+    }
+  };
 
   useEffect(() => {
     fetchTasks();
+  }, []);
+
+  useEffect(() => {
+    const body = document.querySelector('body');
+
+    if (body) {
+      body.addEventListener('keypress', bodyListener);
+    }
   }, []);
 
   const fetchTasks = () => {
@@ -72,15 +108,27 @@ const App: React.FC = () => {
     ipcRenderer.on(constants.TASKS_LOAD, (event: any, data: any) => {
       setTodos(data);
     });
-  }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const reduced =
+      toDos.length > 0 &&
+      toDos.reduce((prev: ToDoType, current: ToDoType) =>
+        prev.index > current.index ? prev : current
+      );
+
+    const newIndex =
+      (reduced && typeof reduced.index !== 'undefined' && reduced.index + 1) ||
+      0;
+
     const newTodos = [
       ...toDos,
       {
         id: v4(),
-        title: newTask
+        title: newTask,
+        index: newIndex
       }
     ];
     saveSetTodos(newTodos);
@@ -106,7 +154,7 @@ const App: React.FC = () => {
 
   const filterTodos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
-    if(value === '') {
+    if (value === '') {
       fetchTasks();
       return;
     }
@@ -118,8 +166,56 @@ const App: React.FC = () => {
     setTodos(newTodos);
   };
 
+  const SortableItem = SortableElement((props: any) => (
+    <ListViewRow paddingLeft="20">
+      <StyledGripIcon>
+        <FaGripVertical />
+      </StyledGripIcon>
+      <Task {...props} setTodo={setTodo} deleteTodo={deleteTodo} />
+    </ListViewRow>
+  ));
+
+  const SortableList = SortableContainer((props: any) => {
+    const { items } = props;
+    return (
+      <ListViewSection>
+        {items
+          .sort((a: ToDoType, b: ToDoType) => a.index - b.index)
+          .map((todo: ToDoType) => (
+            <SortableItem {...todo} key={todo.id} index={todo.index} />
+          ))}
+      </ListViewSection>
+    );
+  });
+
+  // Soting FNC
+  const onSortEnd = ({ newIndex, oldIndex }: SortEnd) => {
+    const newTodos = toDos.map((todo: ToDoType) => {
+      const { index } = todo;
+      if (newIndex < oldIndex) {
+        todo.index = index >= newIndex ? index + 1 : index;
+      } else if (newIndex > oldIndex) {
+        todo.index = index <= newIndex ? index - 1 : index;
+      }
+
+      if (index === oldIndex) {
+        todo.index = newIndex;
+      }
+      return todo;
+    });
+
+    saveSetTodos(newTodos);
+  };
+
+  const realDelete = () => {
+    saveSetTodos(toDos.filter(todo => todo.id != delDialog));
+    setDelDialog(false);
+  };
+
+
+
   return (
-    <div className="App">
+    <StyledApp className="App">
       {delDialog && (
         <StyledDialog>
           <Dialog
@@ -127,13 +223,7 @@ const App: React.FC = () => {
             message="Are you sure you want to delete this task?"
             buttons={[
               <Button onClick={() => setDelDialog(false)}>Cancel</Button>,
-              <Button
-                color="blue"
-                onClick={() => {
-                  saveSetTodos(toDos.filter(todo => todo.id != delDialog));
-                  setDelDialog(false);
-                }}
-              >
+              <Button color="blue" onClick={realDelete}>
                 Delete
               </Button>
             ]}
@@ -141,7 +231,7 @@ const App: React.FC = () => {
         </StyledDialog>
       )}
 
-      <Text padding="0 100px" textAlign="center" size="32" marginBottom={20}>
+      <Text textAlign="center" size="32" marginBottom={20} padding={0}>
         Todo app
       </Text>
 
@@ -151,39 +241,39 @@ const App: React.FC = () => {
           defaultValue=""
           onChange={filterTodos}
           onCancel={() => fetchTasks()}
-
         />
       </StyledSearch>
-      <ListView background="#f1f2f4" width="100%">
-        <ListViewHeader>
-          <Text size="11" color="#696969">
-            Order by name
-          </Text>
-        </ListViewHeader>
-        <ListViewSection>
-          {toDos.map(todo => (
-            <Task
-              {...todo}
-              key={todo.id}
-              setTodo={setTodo}
-              deleteTodo={deleteTodo}
-            />
-          ))}
-        </ListViewSection>
-        <ListViewFooter>
-          <form onSubmit={handleSubmit}>
-            <TextInput
-              label="New ToDo"
-              placeholder="Cut the cat"
-              value={newTask}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setNewTask(e.target.value)
-              }
-            />
-          </form>
-        </ListViewFooter>
-      </ListView>
-    </div>
+      <div>
+        <ListView background="#f1f2f4" width="100%">
+          <ListViewHeader>
+            <Text size="11" color="#696969">
+              Order by name
+            </Text>
+          </ListViewHeader>
+
+          <SortableList
+            items={toDos}
+            onSortEnd={onSortEnd}
+            lockAxis="y"
+            pressThreshold={20}
+            distance={20}
+          />
+
+          <ListViewFooter>
+            <form onSubmit={handleSubmit}>
+              <TextInput
+                label="New ToDo"
+                placeholder="Cut the cat"
+                value={newTask}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setNewTask(e.target.value)
+                }
+              />
+            </form>
+          </ListViewFooter>
+        </ListView>
+      </div>
+    </StyledApp>
   );
 };
 
