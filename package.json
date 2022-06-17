@@ -36,7 +36,7 @@
   },
   "devDependencies" : {
     "electron-builder": "^21.0.15",
-    "electron": "^5.0.6"
+    "electron": "^15.5.5"
   },
   "scripts": {
     "react-start": "react-scripts start",
